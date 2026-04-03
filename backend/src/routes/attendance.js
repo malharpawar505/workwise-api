@@ -20,10 +20,6 @@ router.post('/punch-in', auth, async (req, res) => {
     const userId = req.user.id;
     const today = getToday();
 
-    if (isWeekend(today)) {
-      return res.status(400).json({ error: 'Today is a weekend. No attendance required.' });
-    }
-
     // Check if already punched in today
     const { data: existing } = await supabase
       .from('attendance')
@@ -144,10 +140,6 @@ router.post('/manual', auth, async (req, res) => {
 
     if (!date || !login_time || !logout_time) {
       return res.status(400).json({ error: 'Date, login time, and logout time are required.' });
-    }
-
-    if (isWeekend(date)) {
-      return res.status(400).json({ error: 'Cannot add entries for weekends.' });
     }
 
     // Don't allow future dates
