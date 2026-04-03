@@ -136,6 +136,63 @@ router.get('/today', auth, async (req, res) => {
   }
 });
 
+// POST /api/attendance/manual — add entry for any date
+router.post('/manual', auth, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { date, login_time, logout_time } = req.body;
+
+    if (!date || !login_time || !logout_time) {
+      return res.status(400).json({ error: 'Date, login time, and logout time are required.' });
+    }
+
+    if (isWeekend(date)) {
+      return res.status(400).json({ error: 'Cannot add entries for weekends.' });
+    }
+
+    // Don't allow future dates
+    const today = getToday();
+    if (date > today) {
+      return res.status(400).json({ error: 'Cannot add entries for future dates.' });
+    }
+
+    // Check if record already exists
+    const { data: existing } = await supabase
+      .from('attendance')
+      .select('id')
+      .eq('user_id', userId)
+      .eq('date', date)
+      .single();
+
+    if (existing) {
+      return res.status(409).json({ error: 'A record already exists for this date. Use edit instead.' });
+    }
+
+    const totalHours = calculateHours(login_time, logout_time);
+    const status = getStatus(totalHours, REQUIRED_HOURS);
+
+    const { data: record, error } = await supabase
+      .from('attendance')
+      .insert([{
+        user_id: userId,
+        date,
+        login_time,
+        logout_time,
+        total_hours: totalHours,
+        status,
+        created_at: new Date().toISOString()
+      }])
+      .select()
+      .single();
+
+    if (error) throw error;
+    res.status(201).json({ message: 'Entry added successfully.', record });
+  } catch (err) {
+    console.error('Manual entry error:', err);
+    res.status(500).json({ error: 'Failed to add entry.' });
+  }
+});
+
 // GET /api/attendance/monthly?year=2025&month=6
 router.get('/monthly', auth, async (req, res) => {
   try {
