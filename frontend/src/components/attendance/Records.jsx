@@ -221,40 +221,12 @@ export default function Records() {
 
       {/* Edit Modal */}
       {editRecord && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm" onClick={() => setEditRecord(null)}>
-          <div className="card p-6 w-full max-w-md animate-in" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-bold">Edit Record</h3>
-              <button onClick={() => setEditRecord(null)} className="p-1 rounded-lg hover:bg-surface-100 dark:hover:bg-surface-800">
-                <X size={18} />
-              </button>
-            </div>
-            <p className="text-sm text-surface-300 mb-4">{formatDate(editRecord.date)}</p>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-xs font-medium text-surface-300 mb-1">Login Time</label>
-                <input
-                  type="datetime-local"
-                  className="input-field text-sm"
-                  value={editRecord.login_time ? editRecord.login_time.slice(0, 16) : ''}
-                  onChange={e => setEditRecord({ ...editRecord, login_time: e.target.value ? new Date(e.target.value).toISOString() : null })}
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-surface-300 mb-1">Logout Time</label>
-                <input
-                  type="datetime-local"
-                  className="input-field text-sm"
-                  value={editRecord.logout_time ? editRecord.logout_time.slice(0, 16) : ''}
-                  onChange={e => setEditRecord({ ...editRecord, logout_time: e.target.value ? new Date(e.target.value).toISOString() : null })}
-                />
-              </div>
-              <button onClick={handleSaveEdit} className="btn-primary w-full flex items-center justify-center gap-2">
-                <Save size={16} /> Save Changes
-              </button>
-            </div>
-          </div>
-        </div>
+        <EditModal
+          record={editRecord}
+          onClose={() => setEditRecord(null)}
+          onSave={handleSaveEdit}
+          onChange={setEditRecord}
+        />
       )}
     </div>
   );
@@ -265,6 +237,66 @@ function MiniStat({ label, value }) {
     <div className="card p-3">
       <p className="text-xs text-surface-300 font-medium">{label}</p>
       <p className="text-lg font-bold mt-0.5">{value}</p>
+    </div>
+  );
+}
+
+// Convert UTC ISO string to local "YYYY-MM-DDTHH:mm" for datetime-local input
+function isoToLocal(isoString) {
+  if (!isoString) return '';
+  const d = new Date(isoString);
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  const hours = String(d.getHours()).padStart(2, '0');
+  const mins = String(d.getMinutes()).padStart(2, '0');
+  return `${year}-${month}-${day}T${hours}:${mins}`;
+}
+
+// Convert local "YYYY-MM-DDTHH:mm" back to ISO string
+function localToIso(localString) {
+  if (!localString) return null;
+  return new Date(localString).toISOString();
+}
+
+function EditModal({ record, onClose, onSave, onChange }) {
+  const loginLocal = isoToLocal(record.login_time);
+  const logoutLocal = isoToLocal(record.logout_time);
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm" onClick={onClose}>
+      <div className="card p-6 w-full max-w-md animate-in" onClick={e => e.stopPropagation()}>
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg font-bold">Edit Record</h3>
+          <button onClick={onClose} className="p-1 rounded-lg hover:bg-surface-100 dark:hover:bg-surface-800">
+            <X size={18} />
+          </button>
+        </div>
+        <p className="text-sm text-surface-300 mb-4">{formatDate(record.date)}</p>
+        <div className="space-y-4">
+          <div>
+            <label className="block text-xs font-medium text-surface-300 mb-1">Login Time</label>
+            <input
+              type="datetime-local"
+              className="input-field text-sm"
+              value={loginLocal}
+              onChange={e => onChange({ ...record, login_time: localToIso(e.target.value) })}
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-surface-300 mb-1">Logout Time</label>
+            <input
+              type="datetime-local"
+              className="input-field text-sm"
+              value={logoutLocal}
+              onChange={e => onChange({ ...record, logout_time: localToIso(e.target.value) })}
+            />
+          </div>
+          <button onClick={onSave} className="btn-primary w-full flex items-center justify-center gap-2">
+            <Save size={16} /> Save Changes
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

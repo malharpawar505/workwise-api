@@ -158,8 +158,12 @@ export default function Dashboard() {
               </div>
             ) : isPunchedOut ? (
               <div className="mt-2">
-                <p className="text-sm text-surface-300">Day complete</p>
-                <p className="text-4xl font-bold font-mono text-emerald-600 mt-1">{hoursToHM(rec.total_hours)}</p>
+                <p className="text-sm text-surface-300">
+                  {rec.status === 'complete' || rec.status === 'extra' ? 'Day complete' : rec.status === 'deficit' ? 'Ended early' : 'Punched out'}
+                </p>
+                <p className={`text-4xl font-bold font-mono mt-1 ${
+                  rec.status === 'extra' ? 'text-emerald-600' : rec.status === 'complete' ? 'text-blue-600' : rec.status === 'deficit' ? 'text-amber-600' : 'text-surface-300'
+                }`}>{hoursToHM(rec.total_hours)}</p>
                 <span className={`status-badge mt-2 ${statusColor(rec.status)}`}>{rec.status}</span>
               </div>
             ) : (
