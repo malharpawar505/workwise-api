@@ -43,7 +43,7 @@ router.post('/register', async (req, res) => {
         department: department?.trim() || 'General',
         created_at: new Date().toISOString()
       }])
-      .select('id, name, email, department, created_at')
+      .select('id, name, email, department, monthly_salary, created_at')
       .single();
 
     if (error) throw error;
@@ -108,7 +108,7 @@ router.get('/me', auth, async (req, res) => {
   try {
     const { data: user, error } = await supabase
       .from('users')
-      .select('id, name, email, department, created_at')
+      .select('id, name, email, department, monthly_salary, created_at')
       .eq('id', req.user.id)
       .single();
 
@@ -120,6 +120,31 @@ router.get('/me', auth, async (req, res) => {
   } catch (err) {
     console.error('Profile error:', err);
     res.status(500).json({ error: 'Failed to fetch profile.' });
+  }
+});
+
+// PUT /api/auth/profile
+router.put('/profile', auth, async (req, res) => {
+  try {
+    const { monthly_salary } = req.body;
+    
+    const updates = {};
+    if (monthly_salary !== undefined) {
+      updates.monthly_salary = parseFloat(monthly_salary) || 0;
+    }
+
+    const { data: user, error } = await supabase
+      .from('users')
+      .update(updates)
+      .eq('id', req.user.id)
+      .select('id, name, email, department, monthly_salary, created_at')
+      .single();
+
+    if (error) throw error;
+    res.json({ user, message: 'Profile updated successfully.' });
+  } catch (err) {
+    console.error('Update profile error:', err);
+    res.status(500).json({ error: 'Failed to update profile.' });
   }
 });
 
